@@ -9,12 +9,23 @@ const Enquiry = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [showFailReasonModal, setShowFailReasonModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [statusChangeData, setStatusChangeData] = useState(null);
   const [newNote, setNewNote] = useState('');
   const [quoteAmount, setQuoteAmount] = useState('');
+  const [failReason, setFailReason] = useState('');
+  const [failMessage, setFailMessage] = useState('');
 
   const enquiries = getLeadsByStatus('Enquiry');
+
+  const failReasons = [
+    'Budget constraints',
+    'Went with competitor', 
+    'Project cancelled',
+    'No response',
+    'Other'
+  ];
 
   const columns = [
     { key: 'name', label: 'Lead Name', sortable: true },
@@ -40,34 +51,61 @@ const Enquiry = () => {
     },
   ];
 
+  // Handler for normal status changes (Follow-up only, Failed goes to special modal)
   const handleStatusChange = (newStatus) => {
     if (statusChangeData) {
-      updateLeadStatus(statusChangeData.leadId, newStatus);
-      setStatusChangeData(null);
-      setShowViewModal(false);
+      if (newStatus === 'Failed') {
+        // Open fail reason modal instead of confirming immediately
+        setShowConfirmModal(false);
+        setShowFailReasonModal(true);
+      } else {
+        updateLeadStatus(statusChangeData.leadId, newStatus);
+        setStatusChangeData(null);
+        setShowViewModal(false);
+        setShowConfirmModal(false);
+      }
     }
   };
 
-  // FIXED: Separate function for handling quotation with amount
+  // Handler for moving lead to Quotation with amount
   const handleMoveToQuotation = () => {
     if (quoteAmount && parseFloat(quoteAmount) > 0 && selectedLead) {
-      // Directly update the lead status with quote amount
       updateLeadStatus(selectedLead.id, 'Quotation', parseFloat(quoteAmount));
-      
-      // Close modals and reset
       setShowQuoteModal(false);
       setShowViewModal(false);
       setQuoteAmount('');
-      
-      console.log(`Moving lead ${selectedLead.name} to Quotation with amount $${quoteAmount}`);
+      setStatusChangeData(null);
+      console.log(`Moved lead ${selectedLead.name} to Quotation with amount $${quoteAmount}`);
     }
   };
 
+  // Handler for confirming failed status with reason and message
+  const handleConfirmFailed = () => {
+    if (failReason && statusChangeData) {
+      // Update lead status to Failed with failure details
+      updateLeadStatus(statusChangeData.leadId, 'Failed', null, {
+        reason: failReason,
+        message: failMessage.trim() || null,
+        failedDate: new Date().toISOString()
+      });
+      
+      // Close all modals and reset states
+      setShowFailReasonModal(false);
+      setShowViewModal(false);
+      setStatusChangeData(null);
+      setFailReason('');
+      setFailMessage('');
+      
+      console.log(`Lead ${selectedLead?.name} marked as failed. Reason: ${failReason}`);
+    }
+  };
+
+  // Add a note to the selected lead
   const handleAddNote = () => {
     if (newNote.trim() && selectedLead) {
       addNoteToLead(selectedLead.id, newNote.trim());
       setNewNote('');
-      // Refresh the selected lead to show the new note
+      // Refresh selectedLead notes from current data state
       const updatedLead = getLeadsByStatus('Enquiry').find(l => l.id === selectedLead.id);
       if (updatedLead) {
         setSelectedLead(updatedLead);
@@ -79,9 +117,7 @@ const Enquiry = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Enquiry</h1>
-        <div className="text-sm text-gray-500">
-          {enquiries.length} enquiries
-        </div>
+        <div className="text-sm text-gray-500">{enquiries.length} enquiries</div>
       </div>
 
       <DataTable
@@ -115,7 +151,7 @@ const Enquiry = () => {
                   <p><span className="font-medium">Assigned To:</span> {selectedLead.assignedTo}</p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Actions</h3>
                 <div className="space-y-2">
@@ -125,6 +161,7 @@ const Enquiry = () => {
                   >
                     Move to Quotation
                   </button>
+
                   <button
                     onClick={() => {
                       setStatusChangeData({
@@ -138,6 +175,7 @@ const Enquiry = () => {
                   >
                     Move to Follow-up
                   </button>
+
                   <button
                     onClick={() => {
                       setStatusChangeData({
@@ -158,7 +196,6 @@ const Enquiry = () => {
             {/* Notes Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Notes & Activities</h3>
-              
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {selectedLead.notes && selectedLead.notes.length > 0 ? (
                   selectedLead.notes.map((note) => (
@@ -173,7 +210,6 @@ const Enquiry = () => {
                   <p className="text-gray-500 text-sm">No notes yet</p>
                 )}
               </div>
-              
               <div className="flex space-x-2">
                 <input
                   type="text"
@@ -228,7 +264,6 @@ const Enquiry = () => {
               Enter the quotation amount to move this lead to quotation stage
             </p>
           </div>
-          
           <div className="flex justify-end space-x-3 pt-4">
             <button
               onClick={() => {
@@ -250,7 +285,92 @@ const Enquiry = () => {
         </div>
       </Modal>
 
-      {/* Confirmation Modal for other status changes */}
+      {/* Failure Reason Modal */}
+      <Modal
+        isOpen={showFailReasonModal}
+        onClose={() => {
+          setShowFailReasonModal(false);
+          setFailReason('');
+          setFailMessage('');
+        }}
+        title="Reason for Failure"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">
+                  You are about to mark this lead as <strong>Failed</strong>. Please provide a reason and optional message.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Reason *
+            </label>
+            <select
+              value={failReason}
+              onChange={(e) => setFailReason(e.target.value)}
+              className="input-field w-full"
+              required
+              autoFocus
+            >
+              <option value="">-- Select a reason --</option>
+              {failReasons.map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Additional Message (Optional)
+            </label>
+            <textarea
+              rows={3}
+              value={failMessage}
+              onChange={(e) => setFailMessage(e.target.value)}
+              className="input-field w-full"
+              placeholder="Add any additional details about why this lead failed..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This message will be stored with the failed lead for future reference
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              onClick={() => {
+                setShowFailReasonModal(false);
+                setFailReason('');
+                setFailMessage('');
+              }}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmFailed}
+              disabled={!failReason}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Mark as Failed
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirmation Modal for other status changes (Follow-up only) */}
       <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}

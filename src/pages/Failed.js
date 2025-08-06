@@ -24,13 +24,21 @@ const Failed = () => {
 
   const lostRevenue = failedLeads.reduce((sum, lead) => sum + (lead.quoteAmount || 0), 0);
 
-  const failureReasons = [
-    { reason: 'Budget constraints', count: Math.floor(failedLeads.length * 0.35) },
-    { reason: 'Went with competitor', count: Math.floor(failedLeads.length * 0.25) },
-    { reason: 'Project cancelled', count: Math.floor(failedLeads.length * 0.20) },
-    { reason: 'No response', count: Math.floor(failedLeads.length * 0.15) },
-    { reason: 'Other', count: Math.floor(failedLeads.length * 0.05) }
-  ];
+  // Get actual failure reasons from leads
+  const getFailureReasons = () => {
+    const reasonCounts = {};
+    failedLeads.forEach(lead => {
+      const reason = lead.failedReason || 'Unknown';
+      reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+    });
+
+    return Object.entries(reasonCounts).map(([reason, count]) => ({
+      reason,
+      count
+    })).sort((a, b) => b.count - a.count);
+  };
+
+  const failureReasons = getFailureReasons();
 
   const columns = [
     { key: 'name', label: 'Lead Name', sortable: true },
@@ -47,6 +55,16 @@ const Failed = () => {
       )
     },
     { 
+      key: 'failedReason', 
+      label: 'Failure Reason', 
+      sortable: true,
+      render: (reason) => (
+        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+          {reason || 'Not specified'}
+        </span>
+      )
+    },
+    { 
       key: 'priority', 
       label: 'Priority', 
       sortable: true,
@@ -56,7 +74,6 @@ const Failed = () => {
         </span>
       )
     },
-    { key: 'source', label: 'Source', sortable: true },
     { key: 'assignedTo', label: 'Handled By', sortable: true },
     { 
       key: 'lastModified', 
@@ -93,7 +110,10 @@ const Failed = () => {
     if (newNote.trim() && selectedLead) {
       addNoteToLead(selectedLead.id, newNote.trim());
       setNewNote('');
-      setSelectedLead(getLeadsByStatus('Failed').find(l => l.id === selectedLead.id));
+      const updatedLead = getLeadsByStatus('Failed').find(l => l.id === selectedLead.id);
+      if (updatedLead) {
+        setSelectedLead(updatedLead);
+      }
     }
   };
 
@@ -167,22 +187,26 @@ const Failed = () => {
       {/* Failure Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Failure Reasons</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Actual Failure Reasons</h3>
           <div className="space-y-3">
-            {failureReasons.map((reason, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">{reason.reason}</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-900">{reason.count}</span>
-                  <div className="w-20 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-red-500 h-2 rounded-full" 
-                      style={{ width: `${(reason.count / failedLeads.length) * 100}%` }}
-                    ></div>
+            {failureReasons.length > 0 ? (
+              failureReasons.map((reason, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">{reason.reason}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-900">{reason.count}</span>
+                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-red-500 h-2 rounded-full" 
+                        style={{ width: `${(reason.count / failedLeads.length) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">No failure reasons recorded yet</p>
+            )}
           </div>
         </div>
 
@@ -239,6 +263,31 @@ const Failed = () => {
                 </div>
               </div>
             </div>
+
+            {/* DISPLAY FAILURE REASON AND MESSAGE */}
+            {(selectedLead.failedReason || selectedLead.failedMessage) && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">Failure Reason</h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p><strong>Reason:</strong> {selectedLead.failedReason || 'Not specified'}</p>
+                      {selectedLead.failedMessage && (
+                        <p className="mt-2"><strong>Details:</strong> {selectedLead.failedMessage}</p>
+                      )}
+                      {selectedLead.failedDate && (
+                        <p className="mt-2 text-xs text-red-600">
+                          Failed on: {new Date(selectedLead.failedDate).toLocaleDateString()} at {new Date(selectedLead.failedDate).toLocaleTimeString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">

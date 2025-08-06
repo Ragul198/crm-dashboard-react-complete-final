@@ -48,8 +48,8 @@ export const CRMProvider = ({ children }) => {
     setActivityLogs([activity, ...activityLogs]);
   };
 
-  // Update lead status
-  const updateLeadStatus = (leadId, newStatus, quoteAmount = null) => {
+  // Update lead status - UPDATED TO HANDLE FAILURE DETAILS
+  const updateLeadStatus = (leadId, newStatus, quoteAmount = null, failureDetails = null) => {
     setLeads(leads.map(lead => {
       if (lead.id === leadId) {
         const updatedLead = {
@@ -58,15 +58,25 @@ export const CRMProvider = ({ children }) => {
           lastModified: new Date().toISOString()
         };
 
+        // Handle quote amount
         if (quoteAmount) {
           updatedLead.quoteAmount = quoteAmount;
+        }
+
+        // Handle failure details
+        if (newStatus === 'Failed' && failureDetails) {
+          updatedLead.failedReason = failureDetails.reason;
+          updatedLead.failedMessage = failureDetails.message;
+          updatedLead.failedDate = failureDetails.failedDate;
         }
 
         // Add activity log
         const activity = {
           id: activityLogs.length + 1,
           type: 'status_change',
-          description: `${lead.name} status changed from '${lead.status}' to '${newStatus}'`,
+          description: `${lead.name} status changed from '${lead.status}' to '${newStatus}'${
+            failureDetails ? ` - Reason: ${failureDetails.reason}` : ''
+          }`,
           user: currentUser.name,
           userId: currentUser.id,
           leadId: leadId,
@@ -74,7 +84,8 @@ export const CRMProvider = ({ children }) => {
           details: {
             leadName: lead.name,
             fromStatus: lead.status,
-            toStatus: newStatus
+            toStatus: newStatus,
+            ...(failureDetails && { failureReason: failureDetails.reason, failureMessage: failureDetails.message })
           }
         };
 

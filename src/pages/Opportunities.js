@@ -8,11 +8,22 @@ const Opportunities = () => {
   const { getLeadsByStatus, updateLeadStatus, addNoteToLead } = useCRM();
   const [showViewModal, setShowViewModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showFailReasonModal, setShowFailReasonModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [statusChangeData, setStatusChangeData] = useState(null);
   const [newNote, setNewNote] = useState('');
+  const [failReason, setFailReason] = useState('');
+  const [failMessage, setFailMessage] = useState('');
 
   const opportunities = getLeadsByStatus('Opportunity');
+
+  const failReasons = [
+    'Budget constraints',
+    'Went with competitor', 
+    'Project cancelled',
+    'No response',
+    'Other'
+  ];
 
   const columns = [
     { key: 'name', label: 'Lead Name', sortable: true },
@@ -39,9 +50,37 @@ const Opportunities = () => {
 
   const handleStatusChange = (newStatus) => {
     if (statusChangeData) {
-      updateLeadStatus(statusChangeData.leadId, newStatus);
-      setStatusChangeData(null);
+      if (newStatus === 'Failed') {
+        // Open fail reason modal instead of confirming immediately
+        setShowConfirmModal(false);
+        setShowFailReasonModal(true);
+      } else {
+        updateLeadStatus(statusChangeData.leadId, newStatus);
+        setStatusChangeData(null);
+        setShowViewModal(false);
+        setShowConfirmModal(false);
+      }
+    }
+  };
+
+  // Handler for confirming failed status with reason and message
+  const handleConfirmFailed = () => {
+    if (failReason && statusChangeData) {
+      // Update lead status to Failed with failure details
+      updateLeadStatus(statusChangeData.leadId, 'Failed', null, {
+        reason: failReason,
+        message: failMessage.trim() || null,
+        failedDate: new Date().toISOString()
+      });
+      
+      // Close all modals and reset states
+      setShowFailReasonModal(false);
       setShowViewModal(false);
+      setStatusChangeData(null);
+      setFailReason('');
+      setFailMessage('');
+      
+      console.log(`Lead ${selectedLead?.name} marked as failed. Reason: ${failReason}`);
     }
   };
 
@@ -49,7 +88,10 @@ const Opportunities = () => {
     if (newNote.trim() && selectedLead) {
       addNoteToLead(selectedLead.id, newNote.trim());
       setNewNote('');
-      setSelectedLead(getLeadsByStatus('Opportunity').find(l => l.id === selectedLead.id));
+      const updatedLead = getLeadsByStatus('Opportunity').find(l => l.id === selectedLead.id);
+      if (updatedLead) {
+        setSelectedLead(updatedLead);
+      }
     }
   };
 
@@ -71,6 +113,7 @@ const Opportunities = () => {
         }}
       />
 
+      {/* View Opportunity Modal */}
       <Modal
         isOpen={showViewModal}
         onClose={() => setShowViewModal(false)}
@@ -126,16 +169,17 @@ const Opportunities = () => {
               </div>
             </div>
 
+            {/* Notes Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Notes & Activities</h3>
 
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-60 overflow-y-auto">
                 {selectedLead.notes && selectedLead.notes.length > 0 ? (
                   selectedLead.notes.map((note) => (
                     <div key={note.id} className="bg-gray-50 p-3 rounded-lg">
                       <p className="text-sm text-gray-900">{note.text}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        By {note.author} on {new Date(note.timestamp).toLocaleDateString()}
+                        By {note.author} on {new Date(note.timestamp).toLocaleDateString()} at {new Date(note.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
                   ))
@@ -155,7 +199,7 @@ const Opportunities = () => {
                 <button
                   onClick={handleAddNote}
                   disabled={!newNote.trim()}
-                  className="btn-primary"
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Add Note
                 </button>
@@ -165,6 +209,92 @@ const Opportunities = () => {
         )}
       </Modal>
 
+      {/* Failure Reason Modal */}
+      <Modal
+        isOpen={showFailReasonModal}
+        onClose={() => {
+          setShowFailReasonModal(false);
+          setFailReason('');
+          setFailMessage('');
+        }}
+        title="Reason for Failure"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">
+                  You are about to mark this opportunity as <strong>Failed</strong>. Please provide a reason and optional message.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Reason *
+            </label>
+            <select
+              value={failReason}
+              onChange={(e) => setFailReason(e.target.value)}
+              className="input-field w-full"
+              required
+              autoFocus
+            >
+              <option value="">-- Select a reason --</option>
+              {failReasons.map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Additional Message (Optional)
+            </label>
+            <textarea
+              rows={3}
+              value={failMessage}
+              onChange={(e) => setFailMessage(e.target.value)}
+              className="input-field w-full"
+              placeholder="Add any additional details about why this opportunity failed..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This message will be stored with the failed lead for future reference
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              onClick={() => {
+                setShowFailReasonModal(false);
+                setFailReason('');
+                setFailMessage('');
+              }}
+              className="btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmFailed}
+              disabled={!failReason}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Mark as Failed
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirmation Modal for other status changes (Enquiry) */}
       <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}

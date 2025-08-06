@@ -23,9 +23,23 @@ export const initialData = {
     {"id": 9, "name": "Financial Services", "email": "sales@financial.com", "phone": "+1-555-0111", "source": "Trade Show", "status": "Quotation", "assignedTo": "Alex Wilson", "createdBy": "Lisa Wang", "dateCreated": "2025-07-31T10:45:00Z", "lastModified": "2025-07-31T16:30:00Z", "priority": "High", "company": "Financial Services", "quoteAmount": 35000, "notes": []},
     {"id": 10, "name": "Retail Chain", "email": "procurement@retail.com", "phone": "+1-555-0222", "source": "Email Campaign", "status": "Follow-up", "assignedTo": "Emily Davis", "createdBy": "Sarah Johnson", "dateCreated": "2025-07-30T13:20:00Z", "lastModified": "2025-07-30T17:45:00Z", "priority": "Medium", "company": "Retail Chain", "quoteAmount": 18000, "notes": []},
     {"id": 11, "name": "Education Institute", "email": "admin@education.com", "phone": "+1-555-0333", "source": "Website", "status": "Converted", "assignedTo": "Mike Chen", "createdBy": "Lisa Wang", "dateCreated": "2025-07-25T11:15:00Z", "lastModified": "2025-07-28T14:30:00Z", "priority": "High", "company": "Education Institute", "quoteAmount": 45000, "notes": []},
-    {"id": 12, "name": "Construction Ltd", "email": "info@construction.com", "phone": "+1-555-0444", "source": "Referral", "status": "Failed", "assignedTo": "Alex Wilson", "createdBy": "Sarah Johnson", "dateCreated": "2025-07-20T08:45:00Z", "lastModified": "2025-07-25T16:20:00Z", "priority": "Low", "company": "Construction Ltd", "notes": []},
+    
+    // UPDATED FAILED LEADS WITH FAILURE REASONS AND MESSAGES
+    {"id": 12, "name": "Construction Ltd", "email": "info@construction.com", "phone": "+1-555-0444", "source": "Referral", "status": "Failed", "assignedTo": "Alex Wilson", "createdBy": "Sarah Johnson", "dateCreated": "2025-07-20T08:45:00Z", "lastModified": "2025-07-25T16:20:00Z", "priority": "Low", "company": "Construction Ltd", "quoteAmount": 22000, "failedReason": "Budget constraints", "failedMessage": "Client mentioned budget was cut by 40% due to economic concerns and couldn't proceed with the project at current pricing.", "failedDate": "2025-07-25T16:20:00Z", "notes": [
+      {"id": 1, "text": "Initial discussion went well, they were interested in our solution", "author": "Alex Wilson", "timestamp": "2025-07-22T10:30:00Z"},
+      {"id": 2, "text": "Sent detailed proposal with pricing breakdown", "author": "Alex Wilson", "timestamp": "2025-07-23T14:15:00Z"},
+      {"id": 3, "text": "Client requested budget revision, mentioned financial constraints", "author": "Alex Wilson", "timestamp": "2025-07-25T11:45:00Z"}
+    ]},
+    
     {"id": 13, "name": "Media Group", "email": "contact@mediagroup.com", "phone": "+1-555-0555", "source": "LinkedIn", "status": "Converted", "assignedTo": "Emily Davis", "createdBy": "Lisa Wang", "dateCreated": "2025-07-15T14:30:00Z", "lastModified": "2025-07-20T11:45:00Z", "priority": "Medium", "company": "Media Group", "quoteAmount": 28000, "notes": []},
-    {"id": 14, "name": "Logistics Pro", "email": "sales@logistics.com", "phone": "+1-555-0666", "source": "Trade Show", "status": "Failed", "assignedTo": "Mike Chen", "createdBy": "Sarah Johnson", "dateCreated": "2025-07-10T10:15:00Z", "lastModified": "2025-07-18T13:30:00Z", "priority": "Low", "company": "Logistics Pro", "notes": []},
+    
+    {"id": 14, "name": "Logistics Pro", "email": "sales@logistics.com", "phone": "+1-555-0666", "source": "Trade Show", "status": "Failed", "assignedTo": "Mike Chen", "createdBy": "Sarah Johnson", "dateCreated": "2025-07-10T10:15:00Z", "lastModified": "2025-07-18T13:30:00Z", "priority": "Low", "company": "Logistics Pro", "quoteAmount": 31000, "failedReason": "Went with competitor", "failedMessage": "After 3 weeks of discussions, client chose a competitor offering similar services at 25% lower cost with faster implementation timeline.", "failedDate": "2025-07-18T13:30:00Z", "notes": [
+      {"id": 1, "text": "Great first meeting, very engaged and asked detailed technical questions", "author": "Mike Chen", "timestamp": "2025-07-12T09:00:00Z"},
+      {"id": 2, "text": "Presented comprehensive solution, client seemed impressed", "author": "Mike Chen", "timestamp": "2025-07-15T16:30:00Z"},
+      {"id": 3, "text": "Client mentioned they are evaluating other vendors as well", "author": "Mike Chen", "timestamp": "2025-07-16T11:20:00Z"},
+      {"id": 4, "text": "Final call - they decided to go with CompetitorX for cost and timeline reasons", "author": "Mike Chen", "timestamp": "2025-07-18T13:30:00Z"}
+    ]},
+    
     {"id": 15, "name": "Consulting Firm", "email": "info@consulting.com", "phone": "+1-555-0777", "source": "Email Campaign", "status": "New", "assignedTo": "Emily Davis", "createdBy": "Lisa Wang", "dateCreated": "2025-08-06T12:20:00Z", "lastModified": "2025-08-06T12:20:00Z", "priority": "High", "company": "Consulting Firm", "notes": []}
   ],
   activityLogs: [
@@ -38,6 +52,10 @@ export const initialData = {
     {"id": 7, "type": "status_change", "description": "Global Enterprises status changed from 'New' to 'Enquiry'", "user": "Mike Chen", "userId": 3, "leadId": 3, "timestamp": "2025-08-03T16:30:00Z", "details": {"leadName": "Global Enterprises", "fromStatus": "New", "toStatus": "Enquiry"}},
     {"id": 8, "type": "user_login", "description": "User logged into the system", "user": "John Smith", "userId": 1, "timestamp": "2025-08-06T18:30:00Z", "details": {"loginTime": "2025-08-06T18:30:00Z"}},
     {"id": 9, "type": "user_login", "description": "User logged into the system", "user": "Sarah Johnson", "userId": 2, "timestamp": "2025-08-06T17:45:00Z", "details": {"loginTime": "2025-08-06T17:45:00Z"}},
-    {"id": 10, "type": "lead_created", "description": "Lead 'Consulting Firm' created and assigned to Emily Davis", "user": "Lisa Wang", "userId": 6, "leadId": 15, "timestamp": "2025-08-06T12:20:00Z", "details": {"leadName": "Consulting Firm", "assignedTo": "Emily Davis"}}
+    {"id": 10, "type": "lead_created", "description": "Lead 'Consulting Firm' created and assigned to Emily Davis", "user": "Lisa Wang", "userId": 6, "leadId": 15, "timestamp": "2025-08-06T12:20:00Z", "details": {"leadName": "Consulting Firm", "assignedTo": "Emily Davis"}},
+    
+    // ADDED FAILURE-RELATED ACTIVITY LOGS
+    {"id": 11, "type": "status_change", "description": "Construction Ltd status changed from 'Quotation' to 'Failed' - Reason: Budget constraints", "user": "Alex Wilson", "userId": 5, "leadId": 12, "timestamp": "2025-07-25T16:20:00Z", "details": {"leadName": "Construction Ltd", "fromStatus": "Quotation", "toStatus": "Failed", "failureReason": "Budget constraints", "failureMessage": "Client mentioned budget was cut by 40% due to economic concerns and couldn't proceed with the project at current pricing."}},
+    {"id": 12, "type": "status_change", "description": "Logistics Pro status changed from 'Quotation' to 'Failed' - Reason: Went with competitor", "user": "Mike Chen", "userId": 3, "leadId": 14, "timestamp": "2025-07-18T13:30:00Z", "details": {"leadName": "Logistics Pro", "fromStatus": "Quotation", "toStatus": "Failed", "failureReason": "Went with competitor", "failureMessage": "After 3 weeks of discussions, client chose a competitor offering similar services at 25% lower cost with faster implementation timeline."}}
   ]
 };
