@@ -18,7 +18,7 @@ const Header = () => {
           >
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">CRMPro</h1>
+          <h1 className="text-2xl font-bold text-gray-900">SMITS CRM</h1>
         </div>
 
         <div className="flex items-center space-x-4">

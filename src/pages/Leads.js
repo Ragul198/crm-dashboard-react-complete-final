@@ -76,14 +76,33 @@ const Leads = () => {
       updateLeadStatus(statusChangeData.leadId, newStatus);
       setStatusChangeData(null);
       setShowViewModal(false);
+      setShowConfirmModal(false);
     }
   };
 
+  // FIXED: Add a note and immediately update the selectedLead state
   const handleAddNote = () => {
     if (newNote.trim() && selectedLead) {
+      // Add the note to the lead in the context
       addNoteToLead(selectedLead.id, newNote.trim());
+      
+      // Create the new note object that will be added
+      const newNoteObj = {
+        id: (selectedLead.notes?.length || 0) + 1,
+        text: newNote.trim(),
+        author: 'Current User', // You might want to get this from context
+        timestamp: new Date().toISOString()
+      };
+      
+      // Immediately update the selectedLead state to show the new note
+      setSelectedLead({
+        ...selectedLead,
+        notes: [...(selectedLead.notes || []), newNoteObj],
+        lastModified: new Date().toISOString()
+      });
+      
+      // Clear the input
       setNewNote('');
-      setSelectedLead(getLeadsByStatus(['New']).find(l => l.id === selectedLead.id));
     }
   };
 
@@ -273,16 +292,17 @@ const Leads = () => {
               </div>
             </div>
 
+            {/* Notes Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Notes & Activities</h3>
 
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-60 overflow-y-auto">
                 {selectedLead.notes && selectedLead.notes.length > 0 ? (
                   selectedLead.notes.map((note) => (
                     <div key={note.id} className="bg-gray-50 p-3 rounded-lg">
                       <p className="text-sm text-gray-900">{note.text}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        By {note.author} on {new Date(note.timestamp).toLocaleDateString()}
+                        By {note.author} on {new Date(note.timestamp).toLocaleDateString()} at {new Date(note.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
                   ))
@@ -298,11 +318,16 @@ const Leads = () => {
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add a note..."
                   className="input-field flex-1"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newNote.trim()) {
+                      handleAddNote();
+                    }
+                  }}
                 />
                 <button
                   onClick={handleAddNote}
                   disabled={!newNote.trim()}
-                  className="btn-primary"
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Add Note
                 </button>

@@ -100,16 +100,29 @@ const Enquiry = () => {
     }
   };
 
-  // Add a note to the selected lead
+  // FIXED: Add a note and immediately update the selectedLead state
   const handleAddNote = () => {
     if (newNote.trim() && selectedLead) {
+      // Add the note to the lead in the context
       addNoteToLead(selectedLead.id, newNote.trim());
+      
+      // Create the new note object that will be added
+      const newNoteObj = {
+        id: (selectedLead.notes?.length || 0) + 1,
+        text: newNote.trim(),
+        author: 'Current User', // You might want to get this from context
+        timestamp: new Date().toISOString()
+      };
+      
+      // Immediately update the selectedLead state to show the new note
+      setSelectedLead({
+        ...selectedLead,
+        notes: [...(selectedLead.notes || []), newNoteObj],
+        lastModified: new Date().toISOString()
+      });
+      
+      // Clear the input
       setNewNote('');
-      // Refresh selectedLead notes from current data state
-      const updatedLead = getLeadsByStatus('Enquiry').find(l => l.id === selectedLead.id);
-      if (updatedLead) {
-        setSelectedLead(updatedLead);
-      }
     }
   };
 
@@ -217,6 +230,11 @@ const Enquiry = () => {
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add a note..."
                   className="input-field flex-1"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newNote.trim()) {
+                      handleAddNote();
+                    }
+                  }}
                 />
                 <button
                   onClick={handleAddNote}

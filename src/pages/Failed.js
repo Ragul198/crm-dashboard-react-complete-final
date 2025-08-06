@@ -103,17 +103,33 @@ const Failed = () => {
       updateLeadStatus(statusChangeData.leadId, newStatus);
       setStatusChangeData(null);
       setShowViewModal(false);
+      setShowConfirmModal(false);
     }
   };
 
+  // FIXED: Add a note and immediately update the selectedLead state
   const handleAddNote = () => {
     if (newNote.trim() && selectedLead) {
+      // Add the note to the lead in the context
       addNoteToLead(selectedLead.id, newNote.trim());
+      
+      // Create the new note object that will be added
+      const newNoteObj = {
+        id: (selectedLead.notes?.length || 0) + 1,
+        text: newNote.trim(),
+        author: 'Current User', // You might want to get this from context
+        timestamp: new Date().toISOString()
+      };
+      
+      // Immediately update the selectedLead state to show the new note
+      setSelectedLead({
+        ...selectedLead,
+        notes: [...(selectedLead.notes || []), newNoteObj],
+        lastModified: new Date().toISOString()
+      });
+      
+      // Clear the input
       setNewNote('');
-      const updatedLead = getLeadsByStatus('Failed').find(l => l.id === selectedLead.id);
-      if (updatedLead) {
-        setSelectedLead(updatedLead);
-      }
     }
   };
 
@@ -394,7 +410,7 @@ const Failed = () => {
                     <div key={note.id} className="bg-gray-50 p-3 rounded-lg">
                       <p className="text-sm text-gray-900">{note.text}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        By {note.author} on {new Date(note.timestamp).toLocaleDateString()}
+                        By {note.author} on {new Date(note.timestamp).toLocaleDateString()} at {new Date(note.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
                   ))
@@ -417,6 +433,11 @@ const Failed = () => {
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Add failure reason or analysis note..."
                     className="input-field flex-1"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && newNote.trim()) {
+                        handleAddNote();
+                      }
+                    }}
                   />
                   <button
                     onClick={handleAddNote}
